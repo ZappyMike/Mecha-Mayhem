@@ -84,13 +84,14 @@ ProjIncludes = {
 	"dependencies/imgui",
 	"dependencies/GLM/include",
 	"dependencies/stbs",
-	"dependencies/fmod",
+	"dependencies/fmod/include",
 	"dependencies/spdlog/include",
 	"dependencies/entt",
 	"dependencies/cereal",
 	"dependencies/gzip",
 	"dependencies/tinyGLTF",
 	"dependencies/json",
+	"dependencies/bullet3/include",
 }
 
 -- These are all the default dependencies that require linking
@@ -101,9 +102,31 @@ Dependencies = {
 	"ImGui",
 	"opengl32.lib",
 	"imagehlp.lib",
-	"dependencies/fmod/fmod64.lib",
+	"Xinput9_1_0.lib",
 	"dependencies/gzip/zlib.lib",
 	"tinyGLTF",
+}
+
+DependenciesDebug = {
+	"dependencies/bullet3/lib/Bullet3Common_Debug.lib",
+	"dependencies/bullet3/lib/BulletCollision_Debug.lib",
+	"dependencies/bullet3/lib/BulletDynamics_Debug.lib",
+	"dependencies/bullet3/lib/BulletInverseDynamics_Debug.lib",
+	"dependencies/bullet3/lib/BulletSoftBody_Debug.lib",
+	"dependencies/bullet3/lib/LinearMath_Debug.lib",
+	"dependencies/fmod/lib/fmodstudioL_vc.lib",
+	"dependencies/fmod/lib/fmodL_vc.lib",
+}
+
+DependenciesRelease = {
+	"dependencies/bullet3/lib/Bullet3Common.lib",
+	"dependencies/bullet3/lib/BulletCollision.lib",
+	"dependencies/bullet3/lib/BulletDynamics.lib",
+	"dependencies/bullet3/lib/BulletInverseDynamics.lib",
+	"dependencies/bullet3/lib/BulletSoftBody.lib",
+	"dependencies/bullet3/lib/LinearMath.lib",
+	"dependencies/fmod/lib/fmodstudio_vc.lib",
+	"dependencies/fmod/lib/fmod_vc.lib",
 }
 
 -- These are what we are linking to (mostly other projects)
@@ -111,6 +134,12 @@ Dependencies = {
 -- We will append our modules to this list
 ProjLinks = { }
 for k, v in pairs(Dependencies) do ProjLinks[k] = v end
+
+ProjDebugLinks = { }
+for k, v in pairs(DependenciesDebug) do ProjDebugLinks[k] = v end
+
+ProjReleaseLinks = { }
+for k, v in pairs(DependenciesRelease) do ProjDebugLinks[k] = v end
 
 -- This function handles creating the default project for a module, if no premake folder is given
 -- @param folderName The path to the module, as collected from os.matchdirs
@@ -123,6 +152,12 @@ function CreateDefaultModule(folderName)
     -- We make a list of what to link against, since we don't want to modify Dependencies or the ProjLinks
     local linkList = {}
     for k, v in pairs(Dependencies) do table.insert(linkList, v) end
+
+    local linkListDebug = {}
+    for k, v in pairs(DependenciesDebug) do table.insert(linkListDebug, v) end
+
+    local linkListRelease = {}
+    for k, v in pairs(DependenciesRelease) do table.insert(linkListRelease, v) end
 
     -- We'll look for any libs the module may have
     local libs = os.matchfiles(folderName .. "/libs/*.lib")
@@ -178,9 +213,13 @@ function CreateDefaultModule(folderName)
 	        runtime "Debug"
 	        symbols "on"
 
+	    	links(linkListDebug)
+
 	    filter "configurations:Release"
 	        runtime "Release"
 	        optimize "on"
+
+	    	links(linkListRelease)
         
 end
 
@@ -340,10 +379,14 @@ function AddProjects(groupName, folders)
 				runtime "Debug"
 				symbols "on"
 
+				links(ProjLinksDebug)
+
 			-- Filters for release configuration
 			filter "configurations:Release"
 				runtime "Release"
 				optimize "on"
+
+				links(ProjLinksRelease)
 	end
 
 end
